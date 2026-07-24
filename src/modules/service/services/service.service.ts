@@ -1,33 +1,26 @@
-import api from "../api/interceptor";
-import {
-  ServiceResponse,
-  SingleServiceResponse,
-} from "../types/service.types";
+import ServiceRepository from "../repositories/service.repository";
 
 class ServiceService {
-  getAll() {
-    return api.get<ServiceResponse>("/services");
+  async getAll() {
+    return ServiceRepository.getAll();
   }
 
-  getById(id: string) {
-    return api.get<SingleServiceResponse>(`/services/${id}`);
+  async getById(id: string) {
+    const service = await ServiceRepository.getById(id);
+
+    if (!service) {
+      throw new Error("Service not found");
+    }
+
+    return service;
   }
 
-  getByCategory(categoryId: string) {
-    return api.get<ServiceResponse>(
-      `/services/category/${categoryId}`,
-    );
+  async getByCategory(categoryId: string) {
+    return ServiceRepository.getByCategory(categoryId);
   }
 
-  search(keyword: string) {
-    return api.get<ServiceResponse>(
-      `/services/search`,
-      {
-        params: {
-          q: keyword,
-        },
-      },
-    );
+  async search(keyword: string) {
+    return ServiceRepository.search(keyword);
   }
 }
 
