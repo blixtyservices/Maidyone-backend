@@ -820,81 +820,6 @@ model Notification {
 }
 
 //////////////////////////////////////////////////////
-// PAYMENT
-//////////////////////////////////////////////////////
-
-model Payment {
-
-  id                String          @id @default(cuid())
-
-  //////////////////////////////////////
-  // Relations
-  //////////////////////////////////////
-
-  bookingId         String          @unique
-
-  booking           Booking         @relation(
-    fields:[bookingId],
-    references:[id]
-  )
-
-  userId            String
-
-  user              User            @relation(
-    fields:[userId],
-    references:[id]
-  )
-
-  //////////////////////////////////////
-  // Razorpay
-  //////////////////////////////////////
-
-  razorpayOrderId   String?         @unique
-
-  razorpayPaymentId String?         @unique
-
-  razorpaySignature String?
-
-  //////////////////////////////////////
-  // Amount
-  //////////////////////////////////////
-
-  amount            Float
-
-  paidAmount        Float           @default(0)
-
-  currency          String          @default("INR")
-
-  //////////////////////////////////////
-  // Status
-  //////////////////////////////////////
-
-  paymentMethod     PaymentMethod
-
-  paymentStatus     PaymentStatus   @default(PENDING)
-
-  //////////////////////////////////////
-  // Refund
-  //////////////////////////////////////
-
-  refundAmount      Float           @default(0)
-
-  refundReason      String?
-
-  refundedAt        DateTime?
-
-  //////////////////////////////////////
-  // Metadata
-  //////////////////////////////////////
-
-  notes             Json?
-
-  createdAt         DateTime        @default(now())
-
-  updatedAt         DateTime        @updatedAt
-}
-
-//////////////////////////////////////////////////////
 // CART
 //////////////////////////////////////////////////////
 
@@ -980,4 +905,10 @@ model CartItem {
   @@index([serviceId])
 
   @@index([packageId])
+}
+
+enum OtpPurpose {
+  LOGIN
+  SIGNUP
+  RESET_PASSWORD
 }
