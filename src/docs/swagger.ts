@@ -12,7 +12,7 @@ const options: swaggerJSDoc.Options = {
 
     servers: [
       {
-        url: "http://localhost:5000/api",
+        url: "https://maidyone-backend-production.up.railway.app",
         description: "Development Server",
       },
     ],
