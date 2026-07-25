@@ -12,15 +12,13 @@ const options: swaggerJSDoc.Options = {
 
     servers: [
       {
-        url: "https://maidyone-backend-production.up.railway.app",
-        description: "Development Server",
+        url: "https://maidyone-backend-production.up.railway.app/api/v1",
+        description: "Production Server",
       },
     ],
   },
 
-  apis: [
-    "./src/modules/**/*.ts",
-  ],
+  apis: ["./src/modules/**/*.ts"],
 };
 
 const swaggerSpec = swaggerJSDoc(options);
