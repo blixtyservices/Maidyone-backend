@@ -1,13 +1,13 @@
 import prisma from "../../../lib/prisma";
-
 import {
   PaymentMethod,
   PaymentStatus,
+  Prisma,
 } from "@prisma/client";
 
 class PaymentRepository {
   /**
-   * Find booking by ID
+   * Find booking
    */
   async findBooking(bookingId: string) {
     return prisma.booking.findUnique({
@@ -32,16 +32,32 @@ class PaymentRepository {
       where: {
         bookingId,
       },
+      include: {
+        booking: {
+          include: {
+            service: true,
+            package: true,
+          },
+        },
+      },
     });
   }
 
   /**
-   * Find payment by ID
+   * Find payment by id
    */
   async findPaymentById(paymentId: string) {
     return prisma.payment.findUnique({
       where: {
         id: paymentId,
+      },
+      include: {
+        booking: {
+          include: {
+            service: true,
+            package: true,
+          },
+        },
       },
     });
   }
@@ -51,18 +67,16 @@ class PaymentRepository {
    */
   async createPayment(data: {
     bookingId: string;
-    userId: string;
-    amount: number;
+    amount: Prisma.Decimal;
     paymentMethod: PaymentMethod;
-    razorpayOrderId?: string;
+    orderId?: string;
   }) {
     return prisma.payment.create({
       data: {
         bookingId: data.bookingId,
-        userId: data.userId,
         amount: data.amount,
         paymentMethod: data.paymentMethod,
-        razorpayOrderId: data.razorpayOrderId,
+        orderId: data.orderId,
       },
     });
   }
@@ -73,13 +87,12 @@ class PaymentRepository {
   async updatePayment(
     paymentId: string,
     data: {
-      razorpayPaymentId?: string;
-      razorpaySignature?: string;
+      paymentId?: string;
+      signature?: string;
       paymentStatus?: PaymentStatus;
-      paidAmount?: number;
-      refundAmount?: number;
-      refundReason?: string;
-      refundedAt?: Date;
+      paidAt?: Date;
+      refundAmount?: Prisma.Decimal;
+      refundId?: string;
     }
   ) {
     return prisma.payment.update({
@@ -117,12 +130,15 @@ class PaymentRepository {
   ) {
     return prisma.payment.findMany({
       where: {
-        userId,
+        booking: {
+          userId,
+        },
       },
       include: {
         booking: {
           include: {
             service: true,
+            package: true,
           },
         },
       },
@@ -140,7 +156,9 @@ class PaymentRepository {
   async paymentCount(userId: string) {
     return prisma.payment.count({
       where: {
-        userId,
+        booking: {
+          userId,
+        },
       },
     });
   }

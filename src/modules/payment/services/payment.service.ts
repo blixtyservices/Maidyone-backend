@@ -15,12 +15,16 @@ import {
 
 class PaymentService {
   /**
-   * Create Payment Order
+   * Create Order
    */
-  async createOrder(userId: string, data: CreateOrderDto) {
-    const booking = await PaymentRepository.findBooking(
-      data.bookingId
-    );
+  async createOrder(
+    userId: string,
+    data: CreateOrderDto
+  ) {
+    const booking =
+      await PaymentRepository.findBooking(
+        data.bookingId
+      );
 
     if (!booking) {
       throw new Error("Booking not found.");
@@ -30,8 +34,13 @@ class PaymentService {
       throw new Error("Unauthorized booking.");
     }
 
-    if (booking.paymentStatus === PaymentStatus.PAID) {
-      throw new Error("Payment already completed.");
+    if (
+      booking.paymentStatus ===
+      PaymentStatus.PAID
+    ) {
+      throw new Error(
+        "Payment already completed."
+      );
     }
 
     const existingPayment =
@@ -43,43 +52,53 @@ class PaymentService {
       return existingPayment;
     }
 
-    // Cash Payment
-    if (data.paymentMethod === PaymentMethod.CASH) {
+    // CASH PAYMENT
+
+    if (
+      data.paymentMethod ===
+      PaymentMethod.CASH
+    ) {
       return PaymentRepository.createPayment({
         bookingId: booking.id,
-        userId,
         amount: booking.finalAmount,
-        paymentMethod: PaymentMethod.CASH,
+        paymentMethod:
+          PaymentMethod.CASH,
       });
     }
 
-    // Wallet Payment
-    if (data.paymentMethod === PaymentMethod.WALLET) {
+    // WALLET PAYMENT
+
+    if (
+      data.paymentMethod ===
+      PaymentMethod.WALLET
+    ) {
       return PaymentRepository.createPayment({
         bookingId: booking.id,
-        userId,
         amount: booking.finalAmount,
-        paymentMethod: PaymentMethod.WALLET,
+        paymentMethod:
+          PaymentMethod.WALLET,
       });
     }
 
-    // Razorpay Order
+    // ONLINE PAYMENT
+
     const order =
       await RazorpayProvider.createOrder(
-        booking.finalAmount,
+        booking.finalAmount.toNumber(),
         booking.bookingNumber,
         {
           bookingId: booking.id,
-          bookingNumber: booking.bookingNumber,
+          bookingNumber:
+            booking.bookingNumber,
         }
       );
 
     return PaymentRepository.createPayment({
       bookingId: booking.id,
-      userId,
       amount: booking.finalAmount,
-      paymentMethod: PaymentMethod.ONLINE,
-      razorpayOrderId: order.id,
+      paymentMethod:
+        PaymentMethod.ONLINE,
+      orderId: order.id,
     });
   }
 
@@ -96,11 +115,17 @@ class PaymentService {
       );
 
     if (!payment) {
-      throw new Error("Payment not found.");
+      throw new Error(
+        "Payment not found."
+      );
     }
 
-    if (payment.userId !== userId) {
-      throw new Error("Unauthorized.");
+    if (
+      payment.booking.userId !== userId
+    ) {
+      throw new Error(
+        "Unauthorized."
+      );
     }
 
     const verified =
@@ -111,22 +136,24 @@ class PaymentService {
       );
 
     if (!verified) {
-      throw new Error("Payment verification failed.");
+      throw new Error(
+        "Payment verification failed."
+      );
     }
 
     await PaymentRepository.updatePayment(
       payment.id,
       {
-        razorpayPaymentId:
+        paymentId:
           data.razorpayPaymentId,
 
-        razorpaySignature:
+        signature:
           data.razorpaySignature,
-
-        paidAmount: payment.amount,
 
         paymentStatus:
           PaymentStatus.PAID,
+
+        paidAt: new Date(),
       }
     );
 
@@ -137,7 +164,8 @@ class PaymentService {
 
     return {
       success: true,
-      message: "Payment verified successfully.",
+      message:
+        "Payment verified successfully.",
     };
   }
 
@@ -173,7 +201,7 @@ class PaymentService {
     };
   }
 
-  /**
+    /**
    * Payment Details
    */
   async paymentDetails(
@@ -186,11 +214,15 @@ class PaymentService {
       );
 
     if (!booking) {
-      throw new Error("Booking not found.");
+      throw new Error(
+        "Booking not found."
+      );
     }
 
     if (booking.userId !== userId) {
-      throw new Error("Unauthorized.");
+      throw new Error(
+        "Unauthorized."
+      );
     }
 
     return booking.payment;
@@ -209,11 +241,17 @@ class PaymentService {
       );
 
     if (!payment) {
-      throw new Error("Payment not found.");
+      throw new Error(
+        "Payment not found."
+      );
     }
 
-    if (payment.userId !== userId) {
-      throw new Error("Unauthorized.");
+    if (
+      payment.booking.userId !== userId
+    ) {
+      throw new Error(
+        "Unauthorized."
+      );
     }
 
     if (
@@ -221,7 +259,7 @@ class PaymentService {
       PaymentStatus.PAID
     ) {
       throw new Error(
-        "Only paid transactions can be refunded."
+        "Only paid payments can be refunded."
       );
     }
 
@@ -229,22 +267,33 @@ class PaymentService {
       payment.paymentMethod ===
       PaymentMethod.ONLINE
     ) {
-      await RazorpayProvider.refundPayment(
-        payment.razorpayPaymentId!,
-        payment.amount
+      const refund =
+        await RazorpayProvider.refundPayment(
+          payment.paymentId!,
+          payment.amount.toNumber()
+        );
+
+      await PaymentRepository.updatePayment(
+        payment.id,
+        {
+          refundId: refund.id,
+          refundAmount:
+            payment.amount,
+          paymentStatus:
+            PaymentStatus.REFUNDED,
+        }
+      );
+    } else {
+      await PaymentRepository.updatePayment(
+        payment.id,
+        {
+          refundAmount:
+            payment.amount,
+          paymentStatus:
+            PaymentStatus.REFUNDED,
+        }
       );
     }
-
-    await PaymentRepository.updatePayment(
-      payment.id,
-      {
-        refundAmount: payment.amount,
-        refundReason: data.reason,
-        refundedAt: new Date(),
-        paymentStatus:
-          PaymentStatus.REFUNDED,
-      }
-    );
 
     await PaymentRepository.updateBookingPaymentStatus(
       payment.bookingId,
@@ -254,7 +303,7 @@ class PaymentService {
     return {
       success: true,
       message:
-        "Refund initiated successfully.",
+        "Refund processed successfully.",
     };
   }
 
@@ -271,11 +320,15 @@ class PaymentService {
       );
 
     if (!booking) {
-      throw new Error("Booking not found.");
+      throw new Error(
+        "Booking not found."
+      );
     }
 
     if (booking.userId !== userId) {
-      throw new Error("Unauthorized.");
+      throw new Error(
+        "Unauthorized."
+      );
     }
 
     return {
@@ -289,7 +342,8 @@ class PaymentService {
         booking.service.name,
 
       package:
-        booking.package.name,
+        booking.package?.name ??
+        "No Package",
 
       amount:
         booking.servicePrice,

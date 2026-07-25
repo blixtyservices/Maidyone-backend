@@ -1,13 +1,11 @@
 import { NotificationType } from "@prisma/client";
 
 import NotificationRepository from "../repositories/notification.repository";
-import FirebaseProvider from "../providers/firebase.provider";
 
 import {
   NotificationQueryDto,
 } from "../validations/notification.validation";
 
-import prisma from "../../../lib/prisma";
 
 class NotificationService {
   /**
@@ -31,30 +29,6 @@ class NotificationService {
         message,
         notificationType,
       });
-
-    const user = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-      select: {
-        fcmToken: true,
-      },
-    });
-
-    if (user?.fcmToken) {
-      try {
-        await FirebaseProvider.sendNotification({
-          token: user.fcmToken,
-          title,
-          body: message,
-        });
-      } catch (error) {
-        console.error(
-          "FCM Notification Error:",
-          error
-        );
-      }
-    }
 
     return notification;
   }

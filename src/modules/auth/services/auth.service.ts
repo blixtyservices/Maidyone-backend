@@ -291,7 +291,7 @@ class AuthService {
 
     return this.sendOtp({
       phone: data.phone,
-      purpose: "FORGOT_PASSWORD",
+      purpose: "RESET_PASSWORD",
     });
   }
 
@@ -303,7 +303,7 @@ class AuthService {
       where: {
         phone: data.phone,
         code: data.code,
-        purpose: "FORGOT_PASSWORD",
+        purpose: "RESET_PASSWORD",
         verified: true,
       },
       orderBy: {

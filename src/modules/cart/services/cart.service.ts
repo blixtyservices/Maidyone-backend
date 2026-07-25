@@ -26,9 +26,9 @@ class CartService {
     let cart = await CartRepository.findCart(userId);
 
     if (!cart) {
-      cart = await CartRepository.createCart(userId);
+      await CartRepository.createCart(userId);
 
-      cart = await CartRepository.findCart(userId);
+      cart = await CartRepository.findCart(userId); 
     }
 
     return this.calculateSummary(cart!);
@@ -65,9 +65,9 @@ class CartService {
     let cart = await CartRepository.findCart(userId);
 
     if (!cart) {
-      cart = await CartRepository.createCart(userId);
+      await CartRepository.createCart(userId);
 
-      cart = await CartRepository.findCart(userId);
+cart = await CartRepository.findCart(userId);
     }
 
     const existing =
@@ -165,9 +165,12 @@ class CartService {
    * Coupon
    * (Coming Later)
    */
-  async applyCoupon() {
-    throw new Error("Coming Soon");
-  }
+  async applyCoupon(
+  userId: string,
+  code: string
+) {
+  throw new Error("Coupon feature is coming soon.");
+}
 
   /**
    * Calculate Cart Summary

@@ -10,11 +10,6 @@ import {
 } from "../types/booking.types";
 
 class BookingService {
-  /**
-   * Generate Booking Number
-   * Example:
-   * MDY-20260723-4831
-   */
   private generateBookingNumber() {
     const now = new Date();
 
@@ -42,9 +37,6 @@ class BookingService {
   }
 
   async create(userId: string, data: CreateBookingBody) {
-    /**
-     * Validate Service
-     */
     const service = await ServiceRepository.getById(data.serviceId);
 
     if (!service) {
@@ -55,9 +47,6 @@ class BookingService {
       throw new Error("Selected service is currently unavailable.");
     }
 
-    /**
-     * Validate Address
-     */
     const address = await AddressRepository.getById(
       data.addressId,
       userId
@@ -67,20 +56,29 @@ class BookingService {
       throw new Error("Address not found.");
     }
 
-    /**
-     * Generate Booking Number
-     */
     const bookingNumber = this.generateBookingNumber();
 
-    /**
-     * Calculate Amount
-     */
-    const totalAmount = Number(service.price);
+    const servicePrice = Number(service.basePrice);
+
+    const discount = 0;
+
+    const gst = 0;
+
+    const platformFee = 0;
+
+    const finalAmount =
+      servicePrice + gst + platformFee - discount;
 
     return BookingRepository.create(
       userId,
       bookingNumber,
-      totalAmount,
+      {
+        servicePrice,
+        discount,
+        gst,
+        platformFee,
+        finalAmount,
+      },
       data
     );
   }
@@ -90,26 +88,19 @@ class BookingService {
     userId: string,
     body: UpdateBookingStatusBody
   ) {
-    const booking = await BookingRepository.exists(
-      id,
-      userId
-    );
+    const booking = await BookingRepository.exists(id, userId);
 
     if (!booking) {
       throw new Error("Booking not found.");
     }
 
-    if (
-      booking.bookingStatus === BookingStatus.CANCELLED
-    ) {
+    if (booking.bookingStatus === BookingStatus.CANCELLED) {
       throw new Error(
         "Cancelled booking status cannot be updated."
       );
     }
 
-    if (
-      booking.bookingStatus === BookingStatus.COMPLETED
-    ) {
+    if (booking.bookingStatus === BookingStatus.COMPLETED) {
       throw new Error(
         "Completed booking status cannot be updated."
       );
@@ -122,24 +113,17 @@ class BookingService {
   }
 
   async cancel(id: string, userId: string) {
-    const booking = await BookingRepository.exists(
-      id,
-      userId
-    );
+    const booking = await BookingRepository.exists(id, userId);
 
     if (!booking) {
       throw new Error("Booking not found.");
     }
 
-    if (
-      booking.bookingStatus === BookingStatus.CANCELLED
-    ) {
+    if (booking.bookingStatus === BookingStatus.CANCELLED) {
       throw new Error("Booking is already cancelled.");
     }
 
-    if (
-      booking.bookingStatus === BookingStatus.COMPLETED
-    ) {
+    if (booking.bookingStatus === BookingStatus.COMPLETED) {
       throw new Error(
         "Completed booking cannot be cancelled."
       );

@@ -5,9 +5,7 @@ import { CreateBookingBody } from "../types/booking.types";
 class BookingRepository {
   async getAll(userId: string) {
     return prisma.booking.findMany({
-      where: {
-        userId,
-      },
+      where: { userId },
       include: {
         service: true,
         address: true,
@@ -35,24 +33,35 @@ class BookingRepository {
   async create(
     userId: string,
     bookingNumber: string,
-    totalAmount: number,
+    pricing: {
+      servicePrice: number;
+      discount: number;
+      gst: number;
+      platformFee: number;
+      finalAmount: number;
+    },
     data: CreateBookingBody
   ) {
     return prisma.booking.create({
       data: {
         bookingNumber,
-
         userId,
-
         serviceId: data.serviceId,
-
         addressId: data.addressId,
 
         bookingDate: new Date(data.bookingDate),
 
         notes: data.notes,
 
-        totalAmount,
+        servicePrice: pricing.servicePrice,
+
+        discount: pricing.discount,
+
+        gst: pricing.gst,
+
+        platformFee: pricing.platformFee,
+
+        finalAmount: pricing.finalAmount,
 
         bookingStatus: BookingStatus.PENDING,
 
@@ -70,9 +79,7 @@ class BookingRepository {
     bookingStatus: BookingStatus
   ) {
     return prisma.booking.update({
-      where: {
-        id,
-      },
+      where: { id },
       data: {
         bookingStatus,
       },
@@ -84,9 +91,7 @@ class BookingRepository {
     paymentStatus: PaymentStatus
   ) {
     return prisma.booking.update({
-      where: {
-        id,
-      },
+      where: { id },
       data: {
         paymentStatus,
       },
@@ -95,9 +100,7 @@ class BookingRepository {
 
   async cancel(id: string) {
     return prisma.booking.update({
-      where: {
-        id,
-      },
+      where: { id },
       data: {
         bookingStatus: BookingStatus.CANCELLED,
       },
@@ -115,9 +118,7 @@ class BookingRepository {
 
   async bookingHistory(userId: string) {
     return prisma.booking.findMany({
-      where: {
-        userId,
-      },
+      where: { userId },
       include: {
         service: true,
         address: true,

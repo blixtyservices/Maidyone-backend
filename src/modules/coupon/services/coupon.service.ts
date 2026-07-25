@@ -32,68 +32,78 @@ class CouponService {
   /**
    * Validate Coupon
    */
-  async validateCoupon(
-    bookingId: string,
-    data: ValidateCouponDto
-  ) {
-    const booking = await CouponRepository.findBooking(bookingId);
+async validateCoupon(
+  bookingId: string,
+  data: ValidateCouponDto
+) {
+  const booking = await CouponRepository.findBooking(bookingId);
 
-    if (!booking) {
-      throw new Error("Booking not found.");
-    }
-
-    const coupon = await CouponRepository.findCouponByCode(
-      data.code
-    );
-
-    if (!coupon) {
-      throw new Error("Invalid coupon.");
-    }
-
-    if (!coupon.isActive) {
-      throw new Error("Coupon is inactive.");
-    }
-
-    if (coupon.expiresAt < new Date()) {
-      throw new Error("Coupon has expired.");
-    }
-
-    if (coupon.usedCount >= coupon.usageLimit) {
-      throw new Error("Coupon usage limit exceeded.");
-    }
-
-    if (booking.servicePrice < coupon.minimumAmount) {
-      throw new Error(
-        `Minimum order amount should be ₹${coupon.minimumAmount}.`
-      );
-    }
-
-    let discount = 0;
-
-    if (coupon.couponType === CouponType.FLAT) {
-      discount = coupon.value;
-    } else {
-      discount = (booking.servicePrice * coupon.value) / 100;
-
-      if (
-        coupon.maximumDiscount &&
-        discount > coupon.maximumDiscount
-      ) {
-        discount = coupon.maximumDiscount;
-      }
-    }
-
-    return {
-      valid: true,
-      coupon,
-      discount,
-      finalAmount:
-        booking.servicePrice +
-        booking.gst +
-        booking.platformFee -
-        discount,
-    };
+  if (!booking) {
+    throw new Error("Booking not found.");
   }
+
+  const coupon = await CouponRepository.findCouponByCode(
+    data.code
+  );
+
+  if (!coupon) {
+    throw new Error("Invalid coupon.");
+  }
+
+  if (!coupon.isActive) {
+    throw new Error("Coupon is inactive.");
+  }
+
+  if (coupon.expiresAt < new Date()) {
+    throw new Error("Coupon has expired.");
+  }
+
+  if (coupon.usedCount >= coupon.usageLimit) {
+    throw new Error("Coupon usage limit exceeded.");
+  }
+
+  const servicePrice = booking.servicePrice.toNumber();
+  const gst = booking.gst.toNumber();
+  const platformFee = booking.platformFee.toNumber();
+
+  const minimumAmount = coupon.minimumAmount.toNumber();
+  const couponValue = coupon.value.toNumber();
+  const maximumDiscount = coupon.maximumDiscount
+    ? coupon.maximumDiscount.toNumber()
+    : null;
+
+  if (servicePrice < minimumAmount) {
+    throw new Error(
+      `Minimum order amount should be ₹${minimumAmount}.`
+    );
+  }
+
+  let discount = 0;
+
+  if (coupon.couponType === CouponType.FLAT) {
+    discount = couponValue;
+  } else {
+    discount = (servicePrice * couponValue) / 100;
+
+    if (
+      maximumDiscount !== null &&
+      discount > maximumDiscount
+    ) {
+      discount = maximumDiscount;
+    }
+  }
+
+  return {
+    valid: true,
+    coupon,
+    discount,
+    finalAmount:
+      servicePrice +
+      gst +
+      platformFee -
+      discount,
+  };
+}
 
   /**
    * Apply Coupon
@@ -164,11 +174,11 @@ class CouponService {
     );
 
     return CouponRepository.removeCoupon(
-      booking.id,
-      booking.servicePrice,
-      booking.gst,
-      booking.platformFee
-    );
+  booking.id,
+  booking.servicePrice.toNumber(),
+  booking.gst.toNumber(),
+  booking.platformFee.toNumber()
+);
   }
 }
 

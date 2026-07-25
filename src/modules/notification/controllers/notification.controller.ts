@@ -69,7 +69,7 @@ class NotificationController {
     const notification =
       await NotificationService.markRead(
         req.user!.id,
-        req.params.id
+        req.params.id as string
       );
 
     return res.status(200).json({
@@ -108,7 +108,7 @@ class NotificationController {
     const result =
       await NotificationService.deleteNotification(
         req.user!.id,
-        req.params.id
+        req.params.id as string
       );
 
     return res.status(200).json({

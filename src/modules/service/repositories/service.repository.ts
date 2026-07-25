@@ -47,7 +47,7 @@ class ServiceRepository {
         isActive: true,
         OR: [
           {
-            title: {
+            name: {
               contains: keyword,
               mode: "insensitive",
             },

@@ -51,7 +51,7 @@ class PaymentController {
   async getPayment(req: Request, res: Response) {
     const payment =
       await PaymentService.paymentDetails(
-        req.params.bookingId,
+        req.params.bookingId as string,
         req.user!.id
       );
 
@@ -116,7 +116,7 @@ class PaymentController {
   ) {
     const invoice =
       await PaymentService.generateInvoice(
-        req.params.bookingId,
+        req.params.bookingId as string,
         req.user!.id
       );
 

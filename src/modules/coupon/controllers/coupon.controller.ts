@@ -39,8 +39,8 @@ class CouponController {
   async getCoupon(req: Request, res: Response) {
     const coupon =
       await CouponService.getCoupon(
-        req.params.id
-      );
+  req.params.id as string
+);
 
     return res.status(200).json({
       success: true,
@@ -56,7 +56,7 @@ class CouponController {
     res: Response
   ) {
     const bookingId =
-      req.params.bookingId;
+  req.params.bookingId as string;
 
     const body =
       validateCouponSchema.parse(

@@ -66,8 +66,7 @@ export const sendOtpSchema = z.object({
   purpose: z.enum([
     "LOGIN",
     "SIGNUP",
-    "FORGOT_PASSWORD",
-    "VERIFY_PHONE",
+    "RESET_PASSWORD",
   ]),
 });
 
@@ -88,8 +87,7 @@ export const verifyOtpSchema = z.object({
   purpose: z.enum([
     "LOGIN",
     "SIGNUP",
-    "FORGOT_PASSWORD",
-    "VERIFY_PHONE",
+    "RESET_PASSWORD",
   ]),
 });
 
@@ -128,15 +126,9 @@ export const resetPasswordSchema = z.object({
  * DTO Types
  */
 export type SignupDto = z.infer<typeof signupSchema>;
-
 export type LoginDto = z.infer<typeof loginSchema>;
-
 export type RefreshTokenDto = z.infer<typeof refreshTokenSchema>;
-
 export type SendOtpDto = z.infer<typeof sendOtpSchema>;
-
 export type VerifyOtpDto = z.infer<typeof verifyOtpSchema>;
-
 export type ForgotPasswordDto = z.infer<typeof forgotPasswordSchema>;
-
 export type ResetPasswordDto = z.infer<typeof resetPasswordSchema>;
