@@ -1,26 +1,32 @@
-import swaggerJSDoc from "swagger-jsdoc";
+definition: {
+  openapi: "3.0.0",
 
-const options: swaggerJSDoc.Options = {
-  definition: {
-    openapi: "3.0.0",
-
-    info: {
-      title: "Maidyone API",
-      version: "1.0.0",
-      description: "Maidyone Backend API Documentation",
-    },
-
-    servers: [
-      {
-        url: "https://maidyone-backend-production.up.railway.app/api/v1",
-        description: "Production Server",
-      },
-    ],
+  info: {
+    title: "Maidyone API",
+    version: "1.0.0",
+    description: "Maidyone Backend API Documentation",
   },
 
-  apis: ["./src/modules/**/*.ts"],
-};
+  servers: [
+    {
+      url: "https://maidyone-backend-production.up.railway.app/api/v1",
+      description: "Production Server",
+    },
+  ],
 
-const swaggerSpec = swaggerJSDoc(options);
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+      },
+    },
+  },
 
-export default swaggerSpec;
+  security: [
+    {
+      bearerAuth: [],
+    },
+  ],
+},
