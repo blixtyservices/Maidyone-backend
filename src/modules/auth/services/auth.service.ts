@@ -19,134 +19,166 @@ import {
 } from "../../../common/jwt/jwt";
 
 class AuthService {
+  
   /**
-   * Register User
-   */
-  async signup(data: SignupDto) {
-    const existingPhone = await prisma.user.findUnique({
+ * Register User
+ */
+async signup(data: SignupDto) {
+  const existingPhone = await prisma.user.findUnique({
+    where: {
+      phone: data.phone.trim(),
+    },
+  });
+
+  if (existingPhone) {
+    throw new Error("Phone number is already registered.");
+  }
+
+  if (data.email) {
+    const existingEmail = await prisma.user.findUnique({
       where: {
-        phone: data.phone,
+        email: data.email.trim(),
       },
     });
 
-    if (existingPhone) {
-      throw new Error("Phone number is already registered.");
+    if (existingEmail) {
+      throw new Error("Email is already registered.");
     }
+  }
 
-    if (data.email) {
-      const existingEmail = await prisma.user.findUnique({
-        where: {
-          email: data.email,
-        },
-      });
+  const hashedPassword = await bcrypt.hash(data.password, 10);
 
-      if (existingEmail) {
-        throw new Error("Email is already registered.");
-      }
-    }
+  const user = await prisma.user.create({
+    data: {
+      fullName: data.fullName.trim(),
+      phone: data.phone.trim(),
+      email: data.email?.trim() || null,
+      password: hashedPassword,
+    },
+  });
 
-    const hashedPassword = await bcrypt.hash(data.password, 10);
+  const accessToken = generateAccessToken({
+    userId: user.id,
+    phone: user.phone,
+  });
 
-    const user = await prisma.user.create({
-      data: {
-        fullName: data.fullName.trim(),
-        phone: data.phone.trim(),
-        email: data.email?.trim() || null,
-        password: hashedPassword,
-      },
-    });
+  const refreshToken = generateRefreshToken({
+    userId: user.id,
+    phone: user.phone,
+  });
 
-    return {
+  await prisma.user.update({
+  where: {
+    id: user.id,
+  },
+  data: {
+    refreshToken,
+    refreshTokenExpiry: new Date(
+      Date.now() + 90 * 24 * 60 * 60 * 1000
+    ),
+    lastLoginAt: new Date(),
+  },
+});
+
+  return {
+    user: {
       id: user.id,
       fullName: user.fullName,
       phone: user.phone,
       email: user.email,
-      createdAt: user.createdAt,
-    };
+    },
+    accessToken,
+    refreshToken,
+  };
+}
+/**
+ * Login User
+ */
+async login(data: LoginDto) {
+  const user = await prisma.user.findUnique({
+    where: {
+      phone: data.phone.trim(),
+    },
+  });
+
+  if (!user) {
+    throw new Error("Invalid phone number or password.");
   }
 
-  /**
-   * Login User
-   */
-  async login(data: LoginDto) {
-    const user = await prisma.user.findUnique({
-      where: {
-        phone: data.phone.trim(),
-      },
-    });
+  if (user.status !== "ACTIVE") {
+    throw new Error("Your account is not active.");
+  }
 
-    if (!user) {
-      throw new Error("Invalid phone number or password.");
-    }
+  const passwordMatched = await bcrypt.compare(
+    data.password,
+    user.password ?? ""
+  );
 
-    const passwordMatched = await bcrypt.compare(
-      data.password,
-      user.password ?? ""
-    );
+  if (!passwordMatched) {
+    throw new Error("Invalid phone number or password.");
+  }
 
-    if (!passwordMatched) {
-      throw new Error("Invalid phone number or password.");
-    }
+  const accessToken = generateAccessToken({
+    userId: user.id,
+    phone: user.phone,
+  });
 
-    const accessToken = generateAccessToken({
-      userId: user.id,
+  const refreshToken = generateRefreshToken({
+    userId: user.id,
+    phone: user.phone,
+  });
+
+  await prisma.user.update({
+  where: {
+    id: user.id,
+  },
+  data: {
+    refreshToken,
+    refreshTokenExpiry: new Date(
+      Date.now() + 90 * 24 * 60 * 60 * 1000
+    ),
+    lastLoginAt: new Date(),
+  },
+});
+
+  return {
+    user: {
+      id: user.id,
+      fullName: user.fullName,
       phone: user.phone,
-    });
+      email: user.email,
+    },
+    accessToken,
+    refreshToken,
+  };
+}
 
-    const refreshToken = generateRefreshToken({
-      userId: user.id,
-      phone: user.phone,
-    });
+/**
+ * Get Logged-in User
+ */
+async me(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      phone: true,
+      email: true,
+      status: true,
+      loginType: true,
+      createdAt: true,
+      lastLoginAt: true,
+    },
+  });
 
-    await prisma.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        refreshToken,
-        lastLoginAt: new Date(),
-      },
-    });
-
-    return {
-      user: {
-        id: user.id,
-        fullName: user.fullName,
-        phone: user.phone,
-        email: user.email,
-      },
-      accessToken,
-      refreshToken,
-    };
+  if (!user) {
+    throw new Error("User not found.");
   }
 
-  /**
-   * Get Logged-in User
-   */
-  async me(userId: string) {
-    const user = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-      select: {
-        id: true,
-        fullName: true,
-        phone: true,
-        email: true,
-        status: true,
-        loginType: true,
-        createdAt: true,
-        lastLoginAt: true,
-      },
-    });
-
-    if (!user) {
-      throw new Error("User not found.");
-    }
-
-    return user;
-  }
-
+  return user;
+}
   /**
    * Refresh Access Token
    */
@@ -167,14 +199,39 @@ class AuthService {
       throw new Error("Invalid refresh token.");
     }
 
-    const accessToken = generateAccessToken({
-      userId: user.id,
-      phone: user.phone,
-    });
+    if (
+  user.refreshTokenExpiry &&
+  user.refreshTokenExpiry < new Date()
+) {
+  throw new Error("Refresh token has expired.");
+}
 
-    return {
-      accessToken,
-    };
+const accessToken = generateAccessToken({
+  userId: user.id,
+  phone: user.phone,
+});
+
+const refreshToken = generateRefreshToken({
+  userId: user.id,
+  phone: user.phone,
+});
+
+await prisma.user.update({
+  where: {
+    id: user.id,
+  },
+  data: {
+    refreshToken,
+    refreshTokenExpiry: new Date(
+      Date.now() + 90 * 24 * 60 * 60 * 1000
+    ),
+    lastLoginAt: new Date(),
+  },
+});
+return {
+  accessToken,
+  refreshToken,
+};
   }
 
   /**
@@ -186,8 +243,9 @@ class AuthService {
         id: userId,
       },
       data: {
-        refreshToken: null,
-      },
+  refreshToken: null,
+  refreshTokenExpiry: null,
+},
     });
 
     return {

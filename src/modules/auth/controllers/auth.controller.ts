@@ -23,7 +23,7 @@ class AuthController {
 
     return res.status(201).json({
       success: true,
-      message: "User registered successfully.",
+      message: "User registered successfully. Login successful.",
       data: user,
     });
   }
