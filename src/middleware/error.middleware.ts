@@ -34,10 +34,20 @@ export default function errorMiddleware(
     });
   }
 
-  console.error(error);
+  console.error("========== ERROR ==========");
+console.error(error);
+console.error("===========================");
 
-  return res.status(500).json({
-    success: false,
-    message: "Internal Server Error",
-  });
+return res.status(500).json({
+  success: false,
+  message: "Internal Server Error",
+  error:
+    error instanceof Error
+      ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        }
+      : error,
+});
 }

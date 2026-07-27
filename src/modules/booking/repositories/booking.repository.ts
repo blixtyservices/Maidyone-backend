@@ -9,6 +9,8 @@ class BookingRepository {
       include: {
         service: true,
         address: true,
+        package: true,
+        coupon: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -26,6 +28,10 @@ class BookingRepository {
         service: true,
         address: true,
         user: true,
+        package: true,
+        coupon: true,
+        partner: true,
+        payment: true,
       },
     });
   }
@@ -47,37 +53,44 @@ class BookingRepository {
         bookingNumber,
         userId,
         serviceId: data.serviceId,
+        packageId: data.packageId ?? null,
         addressId: data.addressId,
+        couponId: data.couponId ?? null,
 
-        bookingDate: new Date(data.bookingDate),
+        bookingType: data.bookingType,
 
-        notes: data.notes,
+        bookingDate:
+          data.bookingType === "SCHEDULED" && data.bookingDate
+            ? new Date(data.bookingDate)
+            : new Date(),
+
+        bookingTime:
+          data.bookingType === "SCHEDULED"
+            ? data.bookingTime ?? null
+            : null,
+
+        notes: data.notes ?? null,
 
         servicePrice: pricing.servicePrice,
-
         discount: pricing.discount,
-
         gst: pricing.gst,
-
         platformFee: pricing.platformFee,
-
         finalAmount: pricing.finalAmount,
 
         bookingStatus: BookingStatus.PENDING,
-
         paymentStatus: PaymentStatus.PENDING,
       },
+
       include: {
         service: true,
         address: true,
+        package: true,
+        coupon: true,
       },
     });
   }
 
-  async updateStatus(
-    id: string,
-    bookingStatus: BookingStatus
-  ) {
+  async updateStatus(id: string, bookingStatus: BookingStatus) {
     return prisma.booking.update({
       where: { id },
       data: {
@@ -86,10 +99,7 @@ class BookingRepository {
     });
   }
 
-  async updatePaymentStatus(
-    id: string,
-    paymentStatus: PaymentStatus
-  ) {
+  async updatePaymentStatus(id: string, paymentStatus: PaymentStatus) {
     return prisma.booking.update({
       where: { id },
       data: {
@@ -122,6 +132,8 @@ class BookingRepository {
       include: {
         service: true,
         address: true,
+        package: true,
+        partner: true,
       },
       orderBy: {
         bookingDate: "desc",

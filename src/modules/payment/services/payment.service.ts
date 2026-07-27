@@ -1,4 +1,5 @@
 import {
+  Prisma,
   PaymentMethod,
   PaymentStatus,
 } from "@prisma/client";
@@ -59,11 +60,10 @@ class PaymentService {
       PaymentMethod.CASH
     ) {
       return PaymentRepository.createPayment({
-        bookingId: booking.id,
-        amount: booking.finalAmount,
-        paymentMethod:
-          PaymentMethod.CASH,
-      });
+  bookingId: booking.id,
+  amount: new Prisma.Decimal(booking.finalAmount),
+  paymentMethod: PaymentMethod.CASH,
+});
     }
 
     // WALLET PAYMENT
@@ -73,33 +73,30 @@ class PaymentService {
       PaymentMethod.WALLET
     ) {
       return PaymentRepository.createPayment({
-        bookingId: booking.id,
-        amount: booking.finalAmount,
-        paymentMethod:
-          PaymentMethod.WALLET,
-      });
+  bookingId: booking.id,
+  amount: new Prisma.Decimal(booking.finalAmount),
+  paymentMethod: PaymentMethod.WALLET,
+});
     }
 
     // ONLINE PAYMENT
 
     const order =
-      await RazorpayProvider.createOrder(
-        booking.finalAmount.toNumber(),
-        booking.bookingNumber,
-        {
-          bookingId: booking.id,
-          bookingNumber:
-            booking.bookingNumber,
-        }
-      );
+  await RazorpayProvider.createOrder(
+    booking.finalAmount.toNumber(),
+    booking.bookingNumber,
+    {
+      bookingId: booking.id,
+      bookingNumber: booking.bookingNumber,
+    }
+  );
 
     return PaymentRepository.createPayment({
-      bookingId: booking.id,
-      amount: booking.finalAmount,
-      paymentMethod:
-        PaymentMethod.ONLINE,
-      orderId: order.id,
-    });
+  bookingId: booking.id,
+  amount: new Prisma.Decimal(booking.finalAmount),
+  paymentMethod: PaymentMethod.ONLINE,
+  orderId: order.id,
+});
   }
 
   /**

@@ -3,6 +3,7 @@ import { BookingStatus } from "@prisma/client";
 import BookingRepository from "../repositories/booking.repository";
 import ServiceRepository from "../../service/repositories/service.repository";
 import AddressRepository from "../../address/repositories/address.repository";
+import { ApiError } from "../../../common/errors";
 
 import {
   CreateBookingBody,
@@ -36,52 +37,82 @@ class BookingService {
     return booking;
   }
 
-  async create(userId: string, data: CreateBookingBody) {
-    const service = await ServiceRepository.getById(data.serviceId);
+  async create(
+  userId: string,
+  data: CreateBookingBody
+) {
+  const service = await ServiceRepository.getById(
+    data.serviceId
+  );
 
-    if (!service) {
-      throw new Error("Service not found.");
-    }
+  if (!service) {
+    throw new ApiError(404, "Service not found.");
+  }
 
-    if (!service.isActive) {
-      throw new Error("Selected service is currently unavailable.");
-    }
+  if (!service.isActive) {
+    throw new ApiError(
+      400,
+      "Selected service is currently unavailable."
+    );
+  }
 
-    const address = await AddressRepository.getById(
+  const address =
+    await AddressRepository.getById(
       data.addressId,
       userId
     );
 
-    if (!address) {
-      throw new Error("Address not found.");
-    }
-
-    const bookingNumber = this.generateBookingNumber();
-
-    const servicePrice = Number(service.basePrice);
-
-    const discount = 0;
-
-    const gst = 0;
-
-    const platformFee = 0;
-
-    const finalAmount =
-      servicePrice + gst + platformFee - discount;
-
-    return BookingRepository.create(
-      userId,
-      bookingNumber,
-      {
-        servicePrice,
-        discount,
-        gst,
-        platformFee,
-        finalAmount,
-      },
-      data
-    );
+  if (!address) {
+    throw new ApiError(404, "Address not found.");
   }
+
+  if (
+    data.bookingType === "SCHEDULED"
+  ) {
+    const scheduleDate = new Date(
+      `${data.bookingDate} ${data.bookingTime}`
+    );
+
+    if (scheduleDate <= new Date()) {
+      throw new ApiError(
+        400,
+        "Scheduled booking must be in the future."
+      );
+    }
+  }
+
+  const bookingNumber =
+    this.generateBookingNumber();
+
+  const servicePrice = Number(
+    service.basePrice
+  );
+
+  const discount = 0;
+
+  const gst = 0;
+
+  const platformFee = 0;
+
+  const finalAmount =
+    servicePrice +
+    gst +
+    platformFee -
+    discount;
+
+  return BookingRepository.create(
+    userId,
+    bookingNumber,
+    {
+      servicePrice,
+      discount,
+      gst,
+      platformFee,
+      finalAmount,
+    },
+    data
+  );
+}
 
   async updateStatus(
     id: string,

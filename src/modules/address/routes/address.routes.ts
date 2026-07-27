@@ -7,16 +7,16 @@ const router = Router();
  * @openapi
  * tags:
  *   name: Addresses
- *   description: User Address APIs
+ *   description: User Address Management APIs
  */
 
 /**
  * @openapi
- * /api/addresses:
+ * /addresses:
  *   get:
  *     tags:
  *       - Addresses
- *     summary: Get all addresses
+ *     summary: Get All Addresses
  *     description: Returns all addresses of the logged-in user.
  *     parameters:
  *       - in: query
@@ -32,11 +32,12 @@ router.get("/", AddressController.getAll);
 
 /**
  * @openapi
- * /api/addresses/{id}:
+ * /addresses/{id}:
  *   get:
  *     tags:
  *       - Addresses
- *     summary: Get address by ID
+ *     summary: Get Address By ID
+ *     description: Returns a single address of the logged-in user.
  *     parameters:
  *       - in: path
  *         name: id
@@ -58,11 +59,12 @@ router.get("/:id", AddressController.getById);
 
 /**
  * @openapi
- * /api/addresses:
+ * /addresses:
  *   post:
  *     tags:
  *       - Addresses
- *     summary: Create a new address
+ *     summary: Create Address
+ *     description: Create a new address for the logged-in user.
  *     parameters:
  *       - in: query
  *         name: userId
@@ -76,43 +78,67 @@ router.get("/:id", AddressController.getById);
  *           schema:
  *             type: object
  *             required:
- *               - fullName
- *               - phone
- *               - houseNo
- *               - area
+ *               - label
+ *               - type
+ *               - houseNumber
+ *               - street
  *               - city
  *               - state
+ *               - country
  *               - pincode
- *               - addressType
+ *               - latitude
+ *               - longitude
  *             properties:
- *               fullName:
+ *               label:
  *                 type: string
- *               phone:
- *                 type: string
- *               houseNo:
- *                 type: string
- *               area:
- *                 type: string
- *               landmark:
- *                 type: string
- *               city:
- *                 type: string
- *               state:
- *                 type: string
- *               pincode:
- *                 type: string
- *               latitude:
- *                 type: number
- *               longitude:
- *                 type: number
- *               addressType:
+ *                 example: Home
+ *
+ *               type:
  *                 type: string
  *                 enum:
  *                   - HOME
  *                   - WORK
  *                   - OTHER
+ *
+ *               houseNumber:
+ *                 type: string
+ *                 example: "105"
+ *
+ *               street:
+ *                 type: string
+ *                 example: Vijay Nagar
+ *
+ *               landmark:
+ *                 type: string
+ *                 example: Near C21 Mall
+ *
+ *               city:
+ *                 type: string
+ *                 example: Indore
+ *
+ *               state:
+ *                 type: string
+ *                 example: Madhya Pradesh
+ *
+ *               country:
+ *                 type: string
+ *                 example: India
+ *
+ *               pincode:
+ *                 type: string
+ *                 example: "452010"
+ *
+ *               latitude:
+ *                 type: number
+ *                 example: 22.7533
+ *
+ *               longitude:
+ *                 type: number
+ *                 example: 75.8937
+ *
  *               isDefault:
  *                 type: boolean
+ *                 example: true
  *     responses:
  *       201:
  *         description: Address created successfully.
@@ -121,11 +147,12 @@ router.post("/", AddressController.create);
 
 /**
  * @openapi
- * /api/addresses/{id}:
+ * /addresses/{id}:
  *   put:
  *     tags:
  *       - Addresses
- *     summary: Update address
+ *     summary: Update Address
+ *     description: Update an existing address.
  *     parameters:
  *       - in: path
  *         name: id
@@ -146,16 +173,19 @@ router.post("/", AddressController.create);
  *     responses:
  *       200:
  *         description: Address updated successfully.
+ *       404:
+ *         description: Address not found.
  */
 router.put("/:id", AddressController.update);
 
 /**
  * @openapi
- * /api/addresses/{id}:
+ * /addresses/{id}:
  *   delete:
  *     tags:
  *       - Addresses
- *     summary: Delete address
+ *     summary: Delete Address
+ *     description: Delete an existing address.
  *     parameters:
  *       - in: path
  *         name: id
@@ -170,16 +200,19 @@ router.put("/:id", AddressController.update);
  *     responses:
  *       200:
  *         description: Address deleted successfully.
+ *       404:
+ *         description: Address not found.
  */
 router.delete("/:id", AddressController.delete);
 
 /**
  * @openapi
- * /api/addresses/{id}/default:
+ * /addresses/{id}/default:
  *   patch:
  *     tags:
  *       - Addresses
- *     summary: Set default address
+ *     summary: Set Default Address
+ *     description: Mark an address as the default address.
  *     parameters:
  *       - in: path
  *         name: id
@@ -194,6 +227,8 @@ router.delete("/:id", AddressController.delete);
  *     responses:
  *       200:
  *         description: Default address updated successfully.
+ *       404:
+ *         description: Address not found.
  */
 router.patch("/:id/default", AddressController.setDefault);
 

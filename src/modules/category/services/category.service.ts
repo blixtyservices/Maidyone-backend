@@ -1,3 +1,4 @@
+import { ApiError } from "../../../common/errors";
 import CategoryRepository from "../repositories/category.repository";
 
 class CategoryService {
@@ -6,7 +7,13 @@ class CategoryService {
   }
 
   async getById(id: string) {
-    return CategoryRepository.getById(id);
+    const category = await CategoryRepository.getById(id);
+
+    if (!category) {
+      throw new ApiError(404, "Category not found.");
+    }
+
+    return category;
   }
 }
 

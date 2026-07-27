@@ -1,5 +1,6 @@
 import { Router } from "express";
 import HomeController from "../controllers/home.controller";
+import AuthMiddleware from "../../../middleware/auth.middleware";
 
 const router = Router();
 
@@ -10,16 +11,18 @@ const router = Router();
  *     tags:
  *       - Home
  *     summary: Get Home Screen Data
- *     parameters:
- *       - in: query
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Home data fetched successfully
+ *       401:
+ *         description: Unauthorized
  */
-router.get("/", HomeController.home);
+router.get(
+  "/",
+  AuthMiddleware.authenticate,
+  HomeController.home
+);
 
 export default router;

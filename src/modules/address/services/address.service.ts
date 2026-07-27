@@ -1,3 +1,4 @@
+import { ApiError } from "../../../common/errors";
 import AddressRepository from "../repositories/address.repository";
 import {
   CreateAddressBody,
@@ -13,7 +14,7 @@ class AddressService {
     const address = await AddressRepository.getById(id, userId);
 
     if (!address) {
-      throw new Error("Address not found");
+      throw new ApiError(404, "Address not found.");
     }
 
     return address;
@@ -23,10 +24,8 @@ class AddressService {
     userId: string,
     data: CreateAddressBody & { isDefault?: boolean }
   ) {
-    // Check if user already has addresses
     const addresses = await AddressRepository.getAll(userId);
 
-    // First address becomes default automatically
     if (addresses.length === 0) {
       data.isDefault = true;
     }
@@ -42,7 +41,7 @@ class AddressService {
     const address = await AddressRepository.getById(id, userId);
 
     if (!address) {
-      throw new Error("Address not found");
+      throw new ApiError(404, "Address not found.");
     }
 
     return AddressRepository.update(id, userId, data);
@@ -52,13 +51,11 @@ class AddressService {
     const address = await AddressRepository.getById(id, userId);
 
     if (!address) {
-      throw new Error("Address not found");
+      throw new ApiError(404, "Address not found.");
     }
 
     await AddressRepository.delete(id, userId);
 
-    // If deleted address was default,
-    // make latest address default
     if (address.isDefault) {
       const addresses = await AddressRepository.getAll(userId);
 
@@ -68,7 +65,7 @@ class AddressService {
     }
 
     return {
-      message: "Address deleted successfully",
+      message: "Address deleted successfully.",
     };
   }
 
@@ -76,7 +73,7 @@ class AddressService {
     const address = await AddressRepository.getById(id, userId);
 
     if (!address) {
-      throw new Error("Address not found");
+      throw new ApiError(404, "Address not found.");
     }
 
     return AddressRepository.setDefault(id, userId);
@@ -86,7 +83,7 @@ class AddressService {
     const address = await AddressRepository.getDefault(userId);
 
     if (!address) {
-      throw new Error("Default address not found");
+      throw new ApiError(404, "Default address not found.");
     }
 
     return address;

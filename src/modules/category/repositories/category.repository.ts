@@ -21,9 +21,10 @@ class CategoryRepository {
   }
 
   async getById(id: string) {
-    return prisma.category.findUnique({
+    return prisma.category.findFirst({
       where: {
         id,
+        isActive: true,
       },
       select: {
         id: true,

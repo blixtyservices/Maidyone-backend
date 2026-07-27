@@ -17,16 +17,17 @@ class ServiceRepository {
   }
 
   async getById(id: string) {
-    return prisma.service.findUnique({
-      where: {
-        id,
-      },
-      include: {
-        category: true,
-        packages: true,
-      },
-    });
-  }
+  return prisma.service.findFirst({
+    where: {
+      id,
+      isActive: true,
+    },
+    include: {
+      category: true,
+      packages: true,
+    },
+  });
+}
 
   async getByCategory(categoryId: string) {
     return prisma.service.findMany({

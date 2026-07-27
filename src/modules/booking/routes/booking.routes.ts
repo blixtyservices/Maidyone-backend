@@ -12,10 +12,12 @@ const router = Router();
 
 /**
  * @openapi
- * /api/bookings:
+ * /bookings:
  *   get:
+ *     tags:
+ *       - Bookings
  *     summary: Get All Bookings
- *     tags: [Bookings]
+ *     description: Returns all bookings of the logged-in user.
  *     parameters:
  *       - in: query
  *         name: userId
@@ -24,16 +26,18 @@ const router = Router();
  *           type: string
  *     responses:
  *       200:
- *         description: Booking list fetched successfully
+ *         description: Bookings fetched successfully.
  */
 router.get("/", BookingController.getAll);
 
 /**
  * @openapi
- * /api/bookings/history:
+ * /bookings/history:
  *   get:
- *     summary: Booking History
- *     tags: [Bookings]
+ *     tags:
+ *       - Bookings
+ *     summary: Get Booking History
+ *     description: Returns completed and cancelled bookings of the logged-in user.
  *     parameters:
  *       - in: query
  *         name: userId
@@ -42,16 +46,18 @@ router.get("/", BookingController.getAll);
  *           type: string
  *     responses:
  *       200:
- *         description: Booking history fetched successfully
+ *         description: Booking history fetched successfully.
  */
 router.get("/history", BookingController.history);
 
 /**
  * @openapi
- * /api/bookings/{id}:
+ * /bookings/{id}:
  *   get:
+ *     tags:
+ *       - Bookings
  *     summary: Get Booking By ID
- *     tags: [Bookings]
+ *     description: Returns booking details by booking ID.
  *     parameters:
  *       - in: path
  *         name: id
@@ -65,16 +71,20 @@ router.get("/history", BookingController.history);
  *           type: string
  *     responses:
  *       200:
- *         description: Booking details fetched successfully
+ *         description: Booking fetched successfully.
+ *       404:
+ *         description: Booking not found.
  */
 router.get("/:id", BookingController.getById);
 
 /**
  * @openapi
- * /api/bookings:
+ * /bookings:
  *   post:
+ *     tags:
+ *       - Bookings
  *     summary: Create Booking
- *     tags: [Bookings]
+ *     description: Create an Instant or Scheduled booking.
  *     parameters:
  *       - in: query
  *         name: userId
@@ -90,28 +100,46 @@ router.get("/:id", BookingController.getById);
  *             required:
  *               - serviceId
  *               - addressId
- *               - bookingDate
+ *               - bookingType
  *             properties:
  *               serviceId:
  *                 type: string
+ *                 example: cms35service123
+ *
  *               addressId:
  *                 type: string
+ *                 example: cms35address123
+ *
+ *               bookingType:
+ *                 type: string
+ *                 enum:
+ *                   - INSTANT
+ *                   - SCHEDULED
+ *                 example: INSTANT
+ *
  *               bookingDate:
  *                 type: string
+ *                 format: date-time
+ *                 example: "2026-08-01T10:00:00.000Z"
+ *                 description: Required only when bookingType is SCHEDULED.
+ *
  *               notes:
  *                 type: string
+ *                 example: Need cleaning in the morning.
  *     responses:
  *       201:
- *         description: Booking created successfully
+ *         description: Booking created successfully.
  */
 router.post("/", BookingController.create);
 
 /**
  * @openapi
- * /api/bookings/{id}/status:
+ * /bookings/{id}/status:
  *   patch:
+ *     tags:
+ *       - Bookings
  *     summary: Update Booking Status
- *     tags: [Bookings]
+ *     description: Update the status of a booking.
  *     parameters:
  *       - in: path
  *         name: id
@@ -129,6 +157,8 @@ router.post("/", BookingController.create);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - bookingStatus
  *             properties:
  *               bookingStatus:
  *                 type: string
@@ -139,18 +169,21 @@ router.post("/", BookingController.create);
  *                   - IN_PROGRESS
  *                   - COMPLETED
  *                   - CANCELLED
+ *                 example: ACCEPTED
  *     responses:
  *       200:
- *         description: Booking status updated successfully
+ *         description: Booking status updated successfully.
  */
 router.patch("/:id/status", BookingController.updateStatus);
 
 /**
  * @openapi
- * /api/bookings/{id}/cancel:
+ * /bookings/{id}/cancel:
  *   patch:
+ *     tags:
+ *       - Bookings
  *     summary: Cancel Booking
- *     tags: [Bookings]
+ *     description: Cancel an existing booking.
  *     parameters:
  *       - in: path
  *         name: id
@@ -164,7 +197,9 @@ router.patch("/:id/status", BookingController.updateStatus);
  *           type: string
  *     responses:
  *       200:
- *         description: Booking cancelled successfully
+ *         description: Booking cancelled successfully.
+ *       404:
+ *         description: Booking not found.
  */
 router.patch("/:id/cancel", BookingController.cancel);
 

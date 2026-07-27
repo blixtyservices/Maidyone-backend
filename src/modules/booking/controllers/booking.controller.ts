@@ -1,7 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-
 import BookingService from "../services/booking.service";
-
 import {
   bookingIdSchema,
   createBookingSchema,
@@ -125,20 +123,18 @@ class BookingController {
     next: NextFunction
   ) {
     try {
-      const { params, body } =
-        updateBookingStatusSchema.parse({
-          params: req.params,
-          body: req.body,
-        });
+      const { params, body } = updateBookingStatusSchema.parse({
+        params: req.params,
+        body: req.body,
+      });
 
       const userId = String(req.query.userId);
 
-      const booking =
-        await BookingService.updateStatus(
-          params.id,
-          userId,
-          body
-        );
+      const booking = await BookingService.updateStatus(
+        params.id,
+        userId,
+        body
+      );
 
       return res.status(200).json({
         success: true,

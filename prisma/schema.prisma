@@ -46,6 +46,11 @@ enum BookingStatus {
   CANCELLED
 }
 
+enum BookingType {
+  INSTANT
+  SCHEDULED
+}
+
 enum PaymentStatus {
   PENDING
   PAID
@@ -260,50 +265,75 @@ model Booking {
   id            String @id @default(cuid())
   bookingNumber String @unique
 
+  // Customer
   userId String
   user   User   @relation(fields: [userId], references: [id])
 
+  // Service
   serviceId String
   service   Service @relation(fields: [serviceId], references: [id])
 
+  // Optional Package
   packageId String?
   package   Package? @relation(fields: [packageId], references: [id])
 
+  // Assigned Partner
   partnerId String?
   partner   Partner? @relation(fields: [partnerId], references: [id])
 
+  // Customer Address
   addressId String
   address   Address @relation(fields: [addressId], references: [id])
 
+  // Optional Coupon
   couponId String?
   coupon   Coupon? @relation(fields: [couponId], references: [id])
 
-  bookingDate DateTime
-  startTime   DateTime?
-  endTime     DateTime?
+  // Booking Type
+  bookingType BookingType
 
+  // Booking Schedule
+  // For INSTANT -> Current DateTime
+  // For SCHEDULED -> Selected DateTime
+  bookingDate DateTime
+  bookingTime String?
+
+  // Actual Work Timing
+  startTime DateTime?
+  endTime   DateTime?
+
+  // Pricing
   servicePrice Decimal @db.Decimal(10, 2)
   discount     Decimal @default(0) @db.Decimal(10, 2)
   gst          Decimal @default(0) @db.Decimal(10, 2)
   platformFee  Decimal @default(0) @db.Decimal(10, 2)
   finalAmount  Decimal @db.Decimal(10, 2)
 
+  // OTP Verification
   startOtp String?
   endOtp   String?
 
+  // Status
   bookingStatus BookingStatus @default(PENDING)
   paymentStatus PaymentStatus @default(PENDING)
 
-  notes     String?
+  // Notes
+  notes String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Payment
   payment Payment?
 
   @@index([userId])
   @@index([partnerId])
+  @@index([serviceId])
+  @@index([addressId])
+  @@index([couponId])
   @@index([bookingStatus])
   @@index([paymentStatus])
+  @@index([bookingType])
   @@index([bookingDate])
 }
 

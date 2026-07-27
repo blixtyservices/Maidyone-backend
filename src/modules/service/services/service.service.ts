@@ -1,3 +1,4 @@
+import { ApiError } from "../../../common/errors";
 import ServiceRepository from "../repositories/service.repository";
 
 class ServiceService {
@@ -9,7 +10,7 @@ class ServiceService {
     const service = await ServiceRepository.getById(id);
 
     if (!service) {
-      throw new Error("Service not found");
+      throw new ApiError(404, "Service not found.");
     }
 
     return service;

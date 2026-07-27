@@ -10,6 +10,10 @@ const options: swaggerJSDoc.Options = {
     },
     servers: [
       {
+        url: "http://localhost:5000/api/v1",
+        description: "Local Development",
+      },
+      {
         url: "https://maidyone-backend-production.up.railway.app/api/v1",
         description: "Production Server",
       },
@@ -27,6 +31,4 @@ const options: swaggerJSDoc.Options = {
   apis: ["./src/modules/**/*.ts"],
 };
 
-const swaggerSpec = swaggerJSDoc(options);
-
-export default swaggerSpec;
+export default swaggerJSDoc(options);

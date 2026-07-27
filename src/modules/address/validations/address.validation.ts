@@ -72,12 +72,10 @@ export const updateAddressSchema = z.object({
   body: z.object({
     fullName: z.string().trim().min(3).optional(),
 
-    phone: z
-      .string()
-      .trim()
-      .min(10)
-      .max(15)
-      .optional(),
+  phone: z
+  .string()
+  .trim()
+  .regex(/^[6-9]\d{9}$/, "Invalid phone number"),
 
     houseNo: z.string().trim().optional(),
 
@@ -95,9 +93,17 @@ export const updateAddressSchema = z.object({
       .regex(/^[0-9]{6}$/)
       .optional(),
 
-    latitude: z.number().optional(),
+    latitude: z
+  .number()
+  .min(-90)
+  .max(90)
+  .optional(),
 
-    longitude: z.number().optional(),
+longitude: z
+  .number()
+  .min(-180)
+  .max(180)
+  .optional(),
 
     addressType: z
       .enum([
