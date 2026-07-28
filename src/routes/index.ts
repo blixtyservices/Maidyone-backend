@@ -10,6 +10,7 @@ import bookingRoutes from "../modules/booking/routes/booking.routes";
 import paymentRoutes from "../modules/payment/routes/payment.routes";
 import couponRoutes from "../modules/coupon/routes/coupon.routes";
 import notificationRoutes from "../modules/notification/routes/notification.routes";
+import bannerRoutes from "../modules/banner/routes/banner.routes";
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.use("/bookings", bookingRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/coupons", couponRoutes);
 router.use("/notifications", notificationRoutes);
+router.use("/banners", bannerRoutes);
 
 export default router;

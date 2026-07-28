@@ -1,39 +1,34 @@
-import prisma from "../../../lib/prisma";
+import prisma from "../../../config/prisma";
 
 class HomeRepository {
-  async getCategories() {
-    return prisma.category.findMany({
-      where: {
-        isActive: true,
+  async getUser(userId: string) {
+    return prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        fullName: true,
+        phone: true,
+        email: true,
+        profileImage: true,
       },
-      orderBy: {
-        displayOrder: "asc",
+    });
+  }
+
+  async getDefaultAddress(userId: string) {
+    return prisma.address.findFirst({
+      where: {
+        userId,
+        isDefault: true,
       },
       select: {
         id: true,
-        name: true,
-        icon: true,
-        image: true,
-      },
-    });
-  }
-
-  async getPopularServices() {
-    return prisma.service.findMany({
-      where: {
-        isActive: true,
-      },
-      include: {
-        category: true,
-      },
-      take: 10,
-    });
-  }
-
-  async getUser(userId: string) {
-    return prisma.user.findUnique({
-      where: {
-        id: userId,
+        label: true,
+        houseNumber: true,
+        landmark: true,
+        area: true,
+        city: true,
+        state: true,
+        pincode: true,
       },
     });
   }
@@ -45,6 +40,92 @@ class HomeRepository {
         isRead: false,
       },
     });
+  }
+
+  async getBanners() {
+    return prisma.banner.findMany({
+      where: {
+        isActive: true,
+      },
+      orderBy: {
+        displayOrder: "asc",
+      },
+      select: {
+        id: true,
+        title: true,
+        subtitle: true,
+        pill1: true,
+        pill2: true,
+        estimatedTime: true,
+        rating: true,
+        buttonText: true,
+        image: true,
+        redirectUrl: true,
+        redirectType: true,
+      },
+    });
+  }
+
+  async getQuickServices() {
+    return prisma.service.findMany({
+      where: {
+        isActive: true,
+      },
+      orderBy: {
+        totalBookings: "desc",
+      },
+      take: 4,
+      select: {
+        id: true,
+        name: true,
+        image: true,
+        displayPriceMin: true,
+        displayPriceMax: true,
+      },
+    });
+  }
+
+  async getExploreServices() {
+    return prisma.service.findMany({
+      where: {
+        isActive: true,
+        isFeatured: true,
+      },
+      take: 10,
+      include: {
+        category: true,
+      },
+    });
+  }
+
+  async getMostBookedServices() {
+    return prisma.service.findMany({
+      where: {
+        isActive: true,
+      },
+      orderBy: {
+        totalBookings: "desc",
+      },
+      take: 10,
+    });
+  }
+
+  async getRebookServices(userId: string) {
+    const bookings = await prisma.booking.findMany({
+      where: {
+        userId,
+        bookingStatus: "COMPLETED",
+      },
+      include: {
+        service: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 10,
+    });
+
+    return bookings.map((booking) => booking.service);
   }
 }
 

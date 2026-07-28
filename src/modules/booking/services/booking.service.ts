@@ -85,8 +85,8 @@ class BookingService {
     this.generateBookingNumber();
 
   const servicePrice = Number(
-    service.basePrice
-  );
+  service.displayPriceMin ?? 0
+);
 
   const discount = 0;
 

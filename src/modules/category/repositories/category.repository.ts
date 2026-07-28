@@ -15,7 +15,7 @@ class CategoryRepository {
         slug: true,
         icon: true,
         image: true,
-        bannerImage: true,
+        banner: true,
       },
     });
   }
@@ -32,7 +32,7 @@ class CategoryRepository {
         slug: true,
         icon: true,
         image: true,
-        bannerImage: true,
+        banner: true,
         isActive: true,
         displayOrder: true,
       },

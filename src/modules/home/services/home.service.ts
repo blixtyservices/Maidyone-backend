@@ -4,25 +4,40 @@ class HomeService {
   async getHome(userId: string) {
     const [
       user,
-      categories,
-      popularServices,
-      notificationCount,
+      address,
+      notifications,
+      banners,
+      quickServices,
+      exploreServices,
+      mostBooked,
+      rebook,
     ] = await Promise.all([
       HomeRepository.getUser(userId),
-      HomeRepository.getCategories(),
-      HomeRepository.getPopularServices(),
+      HomeRepository.getDefaultAddress(userId),
       HomeRepository.getNotificationsCount(userId),
+      HomeRepository.getBanners(),
+      HomeRepository.getQuickServices(),
+      HomeRepository.getExploreServices(),
+      HomeRepository.getMostBookedServices(),
+      HomeRepository.getRebookServices(userId),
     ]);
 
     return {
-      user,
-      currentAddress: null, // Replace with AddressRepository.getDefaultAddress(userId)
-      banners: [], // Replace with BannerRepository.getActiveBanners()
-      categories,
-      popularServices,
-      featuredServices: [],
-      offers: [],
-      notifications: notificationCount,
+      header: {
+        user,
+        address,
+        notifications,
+      },
+
+      banners,
+
+      quickServices,
+
+      exploreServices,
+
+      mostBooked,
+
+      rebook,
     };
   }
 }
