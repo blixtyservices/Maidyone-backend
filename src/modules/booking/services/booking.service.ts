@@ -250,15 +250,15 @@ class BookingService {
       finalAmount,
     },
     {
-      serviceId: item.serviceId,
-      packageId: item.packageId,
-      addressId: data.addressId,
-      couponId: null,
-      bookingType: data.bookingType,
-      bookingDate: data.bookingDate,
-      bookingTime: data.bookingTime,
-      notes: data.notes,
-    }
+  serviceId: item.serviceId,
+  packageId: item.packageId ?? undefined,
+  addressId: data.addressId,
+  couponId: undefined,
+  bookingType: data.bookingType,
+  bookingDate: data.bookingDate,
+  bookingTime: data.bookingTime,
+  notes: data.notes,
+}
   );
 
   await CartRepository.clearCart(cart.id);
