@@ -92,32 +92,38 @@ async login(req: Request, res: Response) {
   /**
    * Send OTP
    */
-  async sendOtp(req: Request, res: Response) {
-    const body = sendOtpSchema.parse(req.body);
+ async sendOtp(req: Request, res: Response) {
+  const body = sendOtpSchema.parse(req.body);
 
-    const result = await AuthService.sendOtp(body);
+  const result = await AuthService.sendOtp(body);
 
-    return res.status(200).json({
-      success: true,
-      message: result.message,
-      data: result,
-    });
-  }
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+    data: {
+      otp: result.otp,
+    },
+  });
+}
 
   /**
    * Verify OTP
    */
   async verifyOtp(req: Request, res: Response) {
-    const body = verifyOtpSchema.parse(req.body);
+  const body = verifyOtpSchema.parse(req.body);
 
-    const result = await AuthService.verifyOtp(body);
+  const result = await AuthService.verifyOtp(body);
 
-    return res.status(200).json({
-      success: true,
-      message: result.message,
-      data: result,
-    });
-  }
+  return res.status(200).json({
+    success: true,
+    message: "OTP verified successfully.",
+    data: {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      user: result.user,
+    },
+  });
+}
 
   /**
    * Forgot Password

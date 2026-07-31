@@ -308,60 +308,87 @@ return {
    * Verify OTP
    */
   async verifyOtp(data: VerifyOtpDto) {
-    const otp = await prisma.otp.findFirst({
-      where: {
-        phone: data.phone,
-        code: data.code,
-        purpose: data.purpose,
-        verified: false,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    if (!otp) {
-      throw new Error("Invalid OTP.");
-    }
-
-    if (otp.expiresAt < new Date()) {
-      throw new Error("OTP has expired.");
-    }
-
-    await prisma.otp.update({
-      where: {
-        id: otp.id,
-      },
-      data: {
-        verified: true,
-      },
-    });
-
-    return {
-      success: true,
-      message: "OTP verified successfully.",
-    };
-  }
-
-  /**
-   * Forgot Password
-   */
-  async forgotPassword(data: ForgotPasswordDto) {
-    const user = await prisma.user.findUnique({
-      where: {
-        phone: data.phone,
-      },
-    });
-
-    if (!user) {
-      throw new Error("User not found.");
-    }
-
-    return this.sendOtp({
+  const otp = await prisma.otp.findFirst({
+    where: {
       phone: data.phone,
-      purpose: "RESET_PASSWORD",
-    });
+      code: data.code,
+      purpose: data.purpose,
+      verified: false,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  if (!otp) {
+    throw new Error("Invalid OTP.");
   }
+
+  if (otp.expiresAt < new Date()) {
+    throw new Error("OTP has expired.");
+  }
+
+  await prisma.otp.update({
+    where: {
+      id: otp.id,
+    },
+    data: {
+      verified: true,
+    },
+  });
+
+  const user = await prisma.user.findUnique({
+    where: {
+      phone: data.phone,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found.");
+  }
+
+  if (user.status !== "ACTIVE") {
+    throw new Error("Account is inactive.");
+  }
+
+  const accessToken = generateAccessToken({
+    userId: user.id,
+    phone: user.phone,
+  });
+
+  const refreshToken = generateRefreshToken({
+    userId: user.id,
+    phone: user.phone,
+  });
+
+  await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      refreshToken,
+      refreshTokenExpiry: new Date(
+        Date.now() + 90 * 24 * 60 * 60 * 1000,
+      ),
+      lastLoginAt: new Date(),
+    },
+  });
+
+  return {
+    success: true,
+    message: "OTP verified successfully.",
+
+    accessToken,
+    refreshToken,
+
+    user: {
+      id: user.id,
+      fullName: user.fullName,
+      phone: user.phone,
+      email: user.email,
+    },
+  };
+}
 
   /**
    * Reset Password
