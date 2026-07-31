@@ -3,7 +3,7 @@ import HomeService from "../services/home.service";
 
 class HomeController {
   async home(req: Request, res: Response) {
-    const userId = req.user!.id;
+    const userId = req.user?.id ?? null;
 
     const data = await HomeService.getHome(userId);
 

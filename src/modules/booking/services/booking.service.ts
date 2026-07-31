@@ -3,6 +3,7 @@ import { BookingStatus } from "@prisma/client";
 import BookingRepository from "../repositories/booking.repository";
 import ServiceRepository from "../../service/repositories/service.repository";
 import AddressRepository from "../../address/repositories/address.repository";
+import CartRepository from "../../cart/repositories/cart.repository";
 import { ApiError } from "../../../common/errors";
 
 import {
@@ -166,6 +167,104 @@ class BookingService {
   async history(userId: string) {
     return BookingRepository.bookingHistory(userId);
   }
+
+  async createFromCart(
+  userId: string,
+  data: {
+    addressId: string;
+    bookingType: "INSTANT" | "SCHEDULED";
+    bookingDate?: string;
+    bookingTime?: string;
+    notes?: string;
+  }
+) {
+  const cart = await CartRepository.findCart(userId);
+
+  if (!cart || cart.items.length === 0) {
+    throw new ApiError(400, "Cart is empty.");
+  }
+
+  // MVP: One booking = First cart item
+  const item = cart.items[0];
+
+  if (!item.service) {
+    throw new ApiError(404, "Service not found.");
+  }
+
+  if (!item.package) {
+    throw new ApiError(404, "Package not found.");
+  }
+
+  const address = await AddressRepository.getById(
+    data.addressId,
+    userId
+  );
+
+  if (!address) {
+    throw new ApiError(404, "Address not found.");
+  }
+
+  if (
+    data.bookingType === "SCHEDULED" &&
+    data.bookingDate &&
+    data.bookingTime
+  ) {
+    const scheduleDate = new Date(
+      `${data.bookingDate} ${data.bookingTime}`
+    );
+
+    if (scheduleDate <= new Date()) {
+      throw new ApiError(
+        400,
+        "Scheduled booking must be in the future."
+      );
+    }
+  }
+
+  const bookingNumber = this.generateBookingNumber();
+
+  const packagePrice = Number(item.package.price);
+
+  const servicePrice = packagePrice * item.quantity;
+
+  const discount = 0;
+
+  const gst = 0;
+
+  const platformFee = 0;
+
+  const finalAmount =
+    servicePrice +
+    gst +
+    platformFee -
+    discount;
+
+  const booking = await BookingRepository.create(
+    userId,
+    bookingNumber,
+    {
+      servicePrice,
+      discount,
+      gst,
+      platformFee,
+      finalAmount,
+    },
+    {
+      serviceId: item.serviceId,
+      packageId: item.packageId,
+      addressId: data.addressId,
+      couponId: null,
+      bookingType: data.bookingType,
+      bookingDate: data.bookingDate,
+      bookingTime: data.bookingTime,
+      notes: data.notes,
+    }
+  );
+
+  await CartRepository.clearCart(cart.id);
+
+  return booking;
+}
 }
 
 export default new BookingService();

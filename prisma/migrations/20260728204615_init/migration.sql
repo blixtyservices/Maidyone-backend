@@ -11,7 +11,10 @@ CREATE TYPE "public"."AddressType" AS ENUM ('HOME', 'WORK', 'OTHER');
 CREATE TYPE "public"."OtpPurpose" AS ENUM ('LOGIN', 'SIGNUP', 'RESET_PASSWORD');
 
 -- CreateEnum
-CREATE TYPE "public"."BookingStatus" AS ENUM ('PENDING', 'ACCEPTED', 'PARTNER_ASSIGNED', 'PARTNER_ARRIVING', 'OTP_VERIFICATION', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
+CREATE TYPE "public"."BookingStatus" AS ENUM ('PENDING', 'CONFIRMED', 'ASSIGNED', 'STARTED', 'COMPLETED', 'CANCELLED');
+
+-- CreateEnum
+CREATE TYPE "public"."BookingType" AS ENUM ('INSTANT', 'SCHEDULED');
 
 -- CreateEnum
 CREATE TYPE "public"."PaymentStatus" AS ENUM ('PENDING', 'PAID', 'FAILED', 'REFUNDED');
@@ -35,18 +38,17 @@ CREATE TYPE "public"."WalletTransactionType" AS ENUM ('CREDIT', 'DEBIT');
 CREATE TABLE "public"."User" (
     "id" TEXT NOT NULL,
     "fullName" TEXT NOT NULL,
-    "email" TEXT,
     "phone" TEXT NOT NULL,
+    "email" TEXT,
     "password" TEXT,
     "profileImage" TEXT,
-    "loginType" "public"."LoginType" NOT NULL DEFAULT 'PHONE',
-    "status" "public"."UserStatus" NOT NULL DEFAULT 'ACTIVE',
-    "isVerified" BOOLEAN NOT NULL DEFAULT false,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "lastLoginAt" TIMESTAMP(3),
     "refreshToken" TEXT,
     "refreshTokenExpiry" TIMESTAMP(3),
+    "lastLoginAt" TIMESTAMP(3),
+    "status" "public"."UserStatus" NOT NULL DEFAULT 'ACTIVE',
+    "loginType" "public"."LoginType" NOT NULL DEFAULT 'PHONE',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -56,12 +58,12 @@ CREATE TABLE "public"."Otp" (
     "id" TEXT NOT NULL,
     "phone" TEXT NOT NULL,
     "code" TEXT NOT NULL,
-    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "purpose" "public"."OtpPurpose" NOT NULL,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
     "verified" BOOLEAN NOT NULL DEFAULT false,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "userId" TEXT,
-    "attempts" INTEGER NOT NULL DEFAULT 0,
-    "purpose" "public"."OtpPurpose" NOT NULL,
 
     CONSTRAINT "Otp_pkey" PRIMARY KEY ("id")
 );
@@ -72,20 +74,21 @@ CREATE TABLE "public"."Address" (
     "userId" TEXT NOT NULL,
     "fullName" TEXT NOT NULL,
     "phone" TEXT NOT NULL,
-    "houseNo" TEXT NOT NULL,
-    "area" TEXT NOT NULL,
+    "label" TEXT,
+    "houseNo" TEXT,
+    "houseNumber" TEXT,
+    "floor" TEXT,
     "landmark" TEXT,
+    "area" TEXT NOT NULL,
     "city" TEXT NOT NULL,
     "state" TEXT NOT NULL,
     "pincode" TEXT NOT NULL,
+    "addressType" "public"."AddressType" NOT NULL DEFAULT 'HOME',
     "latitude" DOUBLE PRECISION,
     "longitude" DOUBLE PRECISION,
-    "addressType" "public"."AddressType" NOT NULL,
     "isDefault" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "country" TEXT NOT NULL DEFAULT 'India',
-    "label" TEXT,
 
     CONSTRAINT "Address_pkey" PRIMARY KEY ("id")
 );
@@ -96,15 +99,38 @@ CREATE TABLE "public"."Category" (
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "description" TEXT,
-    "image" TEXT,
     "icon" TEXT,
-    "bannerImage" TEXT,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "image" TEXT,
+    "banner" TEXT,
+    "color" TEXT,
     "displayOrder" INTEGER NOT NULL DEFAULT 0,
+    "isFeatured" BOOLEAN NOT NULL DEFAULT false,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."Banner" (
+    "id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "subtitle" TEXT,
+    "pill1" TEXT,
+    "pill2" TEXT,
+    "estimatedTime" TEXT,
+    "rating" DOUBLE PRECISION,
+    "buttonText" TEXT,
+    "image" TEXT NOT NULL,
+    "redirectUrl" TEXT,
+    "redirectType" TEXT,
+    "displayOrder" INTEGER NOT NULL DEFAULT 0,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Banner_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -114,11 +140,15 @@ CREATE TABLE "public"."Service" (
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "description" TEXT,
-    "shortDescription" TEXT,
     "image" TEXT,
-    "bannerImage" TEXT,
-    "basePrice" DECIMAL(10,2) NOT NULL,
-    "duration" INTEGER NOT NULL,
+    "displayPriceMin" DECIMAL(10,2),
+    "displayPriceMax" DECIMAL(10,2),
+    "durationMinutes" INTEGER,
+    "rating" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "totalReviews" INTEGER NOT NULL DEFAULT 0,
+    "totalBookings" INTEGER NOT NULL DEFAULT 0,
+    "isFeatured" BOOLEAN NOT NULL DEFAULT false,
+    "isPopular" BOOLEAN NOT NULL DEFAULT false,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -153,7 +183,9 @@ CREATE TABLE "public"."Booking" (
     "partnerId" TEXT,
     "addressId" TEXT NOT NULL,
     "couponId" TEXT,
+    "bookingType" "public"."BookingType" NOT NULL,
     "bookingDate" TIMESTAMP(3) NOT NULL,
+    "bookingTime" TEXT,
     "startTime" TIMESTAMP(3),
     "endTime" TIMESTAMP(3),
     "servicePrice" DECIMAL(10,2) NOT NULL,
@@ -284,7 +316,7 @@ CREATE TABLE "public"."Notification" (
     "userId" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "message" TEXT NOT NULL,
-    "notificationType" "public"."NotificationType" NOT NULL,
+    "type" "public"."NotificationType" NOT NULL DEFAULT 'GENERAL',
     "isRead" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -315,16 +347,10 @@ CREATE TABLE "public"."CartItem" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "public"."User"("email");
-
--- CreateIndex
 CREATE UNIQUE INDEX "User_phone_key" ON "public"."User"("phone");
 
 -- CreateIndex
-CREATE INDEX "User_phone_idx" ON "public"."User"("phone");
-
--- CreateIndex
-CREATE INDEX "User_email_idx" ON "public"."User"("email");
+CREATE UNIQUE INDEX "User_email_key" ON "public"."User"("email");
 
 -- CreateIndex
 CREATE INDEX "Otp_phone_idx" ON "public"."Otp"("phone");
@@ -333,31 +359,10 @@ CREATE INDEX "Otp_phone_idx" ON "public"."Otp"("phone");
 CREATE INDEX "Otp_expiresAt_idx" ON "public"."Otp"("expiresAt");
 
 -- CreateIndex
-CREATE INDEX "Address_userId_idx" ON "public"."Address"("userId");
-
--- CreateIndex
-CREATE INDEX "Address_city_idx" ON "public"."Address"("city");
-
--- CreateIndex
-CREATE INDEX "Address_pincode_idx" ON "public"."Address"("pincode");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Category_slug_key" ON "public"."Category"("slug");
 
 -- CreateIndex
-CREATE INDEX "Category_slug_idx" ON "public"."Category"("slug");
-
--- CreateIndex
-CREATE INDEX "Category_isActive_idx" ON "public"."Category"("isActive");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Service_slug_key" ON "public"."Service"("slug");
-
--- CreateIndex
-CREATE INDEX "Service_categoryId_idx" ON "public"."Service"("categoryId");
-
--- CreateIndex
-CREATE INDEX "Service_slug_idx" ON "public"."Service"("slug");
 
 -- CreateIndex
 CREATE INDEX "Package_serviceId_idx" ON "public"."Package"("serviceId");
@@ -372,10 +377,22 @@ CREATE INDEX "Booking_userId_idx" ON "public"."Booking"("userId");
 CREATE INDEX "Booking_partnerId_idx" ON "public"."Booking"("partnerId");
 
 -- CreateIndex
+CREATE INDEX "Booking_serviceId_idx" ON "public"."Booking"("serviceId");
+
+-- CreateIndex
+CREATE INDEX "Booking_addressId_idx" ON "public"."Booking"("addressId");
+
+-- CreateIndex
+CREATE INDEX "Booking_couponId_idx" ON "public"."Booking"("couponId");
+
+-- CreateIndex
 CREATE INDEX "Booking_bookingStatus_idx" ON "public"."Booking"("bookingStatus");
 
 -- CreateIndex
 CREATE INDEX "Booking_paymentStatus_idx" ON "public"."Booking"("paymentStatus");
+
+-- CreateIndex
+CREATE INDEX "Booking_bookingType_idx" ON "public"."Booking"("bookingType");
 
 -- CreateIndex
 CREATE INDEX "Booking_bookingDate_idx" ON "public"."Booking"("bookingDate");
@@ -391,6 +408,12 @@ CREATE UNIQUE INDEX "Partner_phone_key" ON "public"."Partner"("phone");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Partner_email_key" ON "public"."Partner"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Partner_aadhaarNumber_key" ON "public"."Partner"("aadhaarNumber");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Partner_panNumber_key" ON "public"."Partner"("panNumber");
 
 -- CreateIndex
 CREATE INDEX "Partner_phone_idx" ON "public"."Partner"("phone");
@@ -417,9 +440,6 @@ CREATE INDEX "Review_partnerId_idx" ON "public"."Review"("partnerId");
 CREATE INDEX "Review_serviceId_idx" ON "public"."Review"("serviceId");
 
 -- CreateIndex
-CREATE INDEX "Notification_userId_idx" ON "public"."Notification"("userId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Cart_userId_key" ON "public"."Cart"("userId");
 
 -- CreateIndex
@@ -438,16 +458,16 @@ ALTER TABLE "public"."Otp" ADD CONSTRAINT "Otp_userId_fkey" FOREIGN KEY ("userId
 ALTER TABLE "public"."Address" ADD CONSTRAINT "Address_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Service" ADD CONSTRAINT "Service_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "public"."Category"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Service" ADD CONSTRAINT "Service_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "public"."Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Package" ADD CONSTRAINT "Package_serviceId_fkey" FOREIGN KEY ("serviceId") REFERENCES "public"."Service"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Booking" ADD CONSTRAINT "Booking_addressId_fkey" FOREIGN KEY ("addressId") REFERENCES "public"."Address"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Booking" ADD CONSTRAINT "Booking_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Booking" ADD CONSTRAINT "Booking_couponId_fkey" FOREIGN KEY ("couponId") REFERENCES "public"."Coupon"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."Booking" ADD CONSTRAINT "Booking_serviceId_fkey" FOREIGN KEY ("serviceId") REFERENCES "public"."Service"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Booking" ADD CONSTRAINT "Booking_packageId_fkey" FOREIGN KEY ("packageId") REFERENCES "public"."Package"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -456,10 +476,10 @@ ALTER TABLE "public"."Booking" ADD CONSTRAINT "Booking_packageId_fkey" FOREIGN K
 ALTER TABLE "public"."Booking" ADD CONSTRAINT "Booking_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "public"."Partner"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Booking" ADD CONSTRAINT "Booking_serviceId_fkey" FOREIGN KEY ("serviceId") REFERENCES "public"."Service"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Booking" ADD CONSTRAINT "Booking_addressId_fkey" FOREIGN KEY ("addressId") REFERENCES "public"."Address"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Booking" ADD CONSTRAINT "Booking_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Booking" ADD CONSTRAINT "Booking_couponId_fkey" FOREIGN KEY ("couponId") REFERENCES "public"."Coupon"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Payment" ADD CONSTRAINT "Payment_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "public"."Booking"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -471,13 +491,13 @@ ALTER TABLE "public"."Wallet" ADD CONSTRAINT "Wallet_partnerId_fkey" FOREIGN KEY
 ALTER TABLE "public"."WalletTransaction" ADD CONSTRAINT "WalletTransaction_walletId_fkey" FOREIGN KEY ("walletId") REFERENCES "public"."Wallet"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "public"."Review" ADD CONSTRAINT "Review_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."Review" ADD CONSTRAINT "Review_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "public"."Partner"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Review" ADD CONSTRAINT "Review_serviceId_fkey" FOREIGN KEY ("serviceId") REFERENCES "public"."Service"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."Review" ADD CONSTRAINT "Review_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -489,7 +509,7 @@ ALTER TABLE "public"."Cart" ADD CONSTRAINT "Cart_userId_fkey" FOREIGN KEY ("user
 ALTER TABLE "public"."CartItem" ADD CONSTRAINT "CartItem_cartId_fkey" FOREIGN KEY ("cartId") REFERENCES "public"."Cart"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."CartItem" ADD CONSTRAINT "CartItem_packageId_fkey" FOREIGN KEY ("packageId") REFERENCES "public"."Package"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."CartItem" ADD CONSTRAINT "CartItem_serviceId_fkey" FOREIGN KEY ("serviceId") REFERENCES "public"."Service"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."CartItem" ADD CONSTRAINT "CartItem_serviceId_fkey" FOREIGN KEY ("serviceId") REFERENCES "public"."Service"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."CartItem" ADD CONSTRAINT "CartItem_packageId_fkey" FOREIGN KEY ("packageId") REFERENCES "public"."Package"("id") ON DELETE SET NULL ON UPDATE CASCADE;

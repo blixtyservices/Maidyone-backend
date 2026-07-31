@@ -3,6 +3,7 @@ import BookingService from "../services/booking.service";
 import {
   bookingIdSchema,
   createBookingSchema,
+  createBookingFromCartSchema,
   updateBookingStatusSchema,
 } from "../validations/booking.validation";
 
@@ -114,6 +115,36 @@ class BookingController {
     }
   }
 
+  /**
+ * POST /bookings/from-cart
+ */
+async createFromCart(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { body } = createBookingFromCartSchema.parse({
+      body: req.body,
+    });
+
+    const userId = String(req.query.userId);
+
+    const booking =
+      await BookingService.createFromCart(
+        userId,
+        body
+      );
+
+    return res.status(201).json({
+      success: true,
+      message: "Booking created successfully",
+      data: booking,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
   /**
    * PATCH /bookings/:id/status
    */

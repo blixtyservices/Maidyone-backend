@@ -132,6 +132,11 @@ router.get("/:id", BookingController.getById);
  */
 router.post("/", BookingController.create);
 
+router.post(
+  "/from-cart",
+  BookingController.createFromCart
+);
+
 /**
  * @openapi
  * /bookings/{id}/status:

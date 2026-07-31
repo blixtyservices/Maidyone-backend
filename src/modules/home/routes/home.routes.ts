@@ -1,6 +1,5 @@
 import { Router } from "express";
 import HomeController from "../controllers/home.controller";
-import AuthMiddleware from "../../../middleware/auth.middleware";
 
 const router = Router();
 
@@ -19,10 +18,6 @@ const router = Router();
  *       401:
  *         description: Unauthorized
  */
-router.get(
-  "/",
-  AuthMiddleware.authenticate,
-  HomeController.home
-);
+router.get("/", HomeController.home);
 
 export default router;

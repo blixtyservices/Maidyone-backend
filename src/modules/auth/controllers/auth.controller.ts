@@ -17,31 +17,37 @@ class AuthController {
    * Register User
    */
   async signup(req: Request, res: Response) {
-    const body = signupSchema.parse(req.body);
+  console.log("SIGNUP STEP 1");
 
-    const user = await AuthService.signup(body);
+  const body = signupSchema.parse(req.body);
 
-    return res.status(201).json({
-      success: true,
-      message: "User registered successfully. Login successful.",
-      data: user,
-    });
-  }
+  console.log("SIGNUP STEP 2");
+
+  const user = await AuthService.signup(body);
+
+  console.log("SIGNUP STEP 3");
+
+  return res.status(201).json({
+    success: true,
+    message: "User registered successfully.",
+    data: user,
+  });
+}
 
   /**
    * Login User
    */
-  async login(req: Request, res: Response) {
-    const body = loginSchema.parse(req.body);
+async login(req: Request, res: Response) {
+  const body = loginSchema.parse(req.body);
 
-    const result = await AuthService.login(body);
+  const result = await AuthService.login(body);
 
-    return res.status(200).json({
-      success: true,
-      message: "Login successful.",
-      data: result,
-    });
-  }
+  return res.status(200).json({
+    success: true,
+    message: "Login successful.",
+    data: result,
+  });
+}
 
   /**
    * Logged-in User

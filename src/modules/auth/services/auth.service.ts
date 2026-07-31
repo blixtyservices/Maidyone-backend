@@ -96,10 +96,15 @@ async signup(data: SignupDto) {
  */
 async login(data: LoginDto) {
   const user = await prisma.user.findUnique({
-    where: {
-      phone: data.phone.trim(),
-    },
-  });
+  where: {
+    phone: data.phone.trim(),
+  },
+});
+
+console.log("========== LOGIN DEBUG ==========");
+console.log("Phone:", data.phone);
+console.log("User:", user);
+console.log("=================================");
 
   if (!user) {
     throw new Error("Invalid phone number or password.");
@@ -109,10 +114,15 @@ async login(data: LoginDto) {
     throw new Error("Your account is not active.");
   }
 
-  const passwordMatched = await bcrypt.compare(
-    data.password,
-    user.password ?? ""
-  );
+  console.log("Entered Password:", JSON.stringify(data.password));
+console.log("Stored Hash:", user.password);
+
+const passwordMatched = await bcrypt.compare(
+  data.password,
+  user.password ?? ""
+);
+
+console.log("Password Match:", passwordMatched);
 
   if (!passwordMatched) {
     throw new Error("Invalid phone number or password.");
